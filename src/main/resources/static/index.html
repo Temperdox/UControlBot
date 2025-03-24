@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Bot Control Panel</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+</head>
+<body>
+<div id="app" class="discord-layout">
+    <!-- Server List -->
+    <div class="server-list-container">
+        <div class="server-list">
+            <!-- Home button -->
+            <div class="server-item home active">
+                <div class="server-icon">
+                    <i class="fa-brands fa-discord"></i>
+                </div>
+                <div class="server-tooltip">Home</div>
+            </div>
+
+            <div class="server-separator"></div>
+
+            <!-- Server Icons will be injected here -->
+            <div id="servers-container"></div>
+
+            <!-- Add Server button -->
+            <div class="server-item add-server">
+                <div class="server-icon">
+                    <i class="fas fa-comment-alt"></i>
+                </div>
+                <div class="server-tooltip">Direct Messages</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Channel List + Content Area -->
+    <div class="main-container">
+        <!-- Channel List / DM List -->
+        <div class="channels-container">
+            <div class="channels-header">
+                <h3 id="guild-name">Direct Messages</h3>
+            </div>
+
+            <div class="channels-search">
+                <input type="text" placeholder="Find or start a conversation">
+            </div>
+
+            <div id="channels-list">
+                <!-- Channel or DM items will be added here -->
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Message Area -->
+            <div class="message-area">
+                <div class="message-header">
+                    <div id="channel-info">
+                        <span class="channel-icon">#</span>
+                        <span class="channel-name">general</span>
+                    </div>
+                </div>
+
+                <div class="messages-container" id="messages-container">
+                    <!-- Messages will be displayed here -->
+                    <div class="welcome-message">
+                        <h2>Welcome to Discord Bot Control Panel</h2>
+                        <p>Select a server or DM to start chatting!</p>
+                    </div>
+                </div>
+
+                <div class="message-input">
+                    <form id="message-form">
+                        <input type="text" id="message-input" placeholder="Send a message...">
+                        <button type="submit">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- User List -->
+            <div class="users-container" id="users-container">
+                <!-- User groups and items will be added here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Bar -->
+<div class="status-bar">
+    <div class="connection-status">
+        <div class="status-indicator"></div>
+        <span id="connection-status">Connecting...</span>
+    </div>
+    <div class="bot-info">
+        <div class="bot-avatar">
+            <div class="default-avatar">B</div>
+        </div>
+        <span class="bot-name">Bot</span>
+        <span class="bot-discriminator">#0000</span>
+    </div>
+</div>
+
+<!-- JavaScript Files -->
+<script type="text/javascript" src="/js/config.js"></script>
+<script type="text/javascript" src="/js/dto/DiscordDTO.js"></script>
+<script type="text/javascript" src="/js/dto/UserDTO.js"></script>
+<script type="text/javascript" src="/js/services/api.js"></script>
+<script type="text/javascript" src="/js/ui.js"></script>
+</body>
+</html>

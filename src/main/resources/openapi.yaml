@@ -1,0 +1,2808 @@
+openapi: 3.0.0
+info:
+  title: Discord Bot JDA API
+  description: Complete API for interacting with a Java Discord bot using JDA
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api
+    description: Development server
+paths:
+  # Bot related endpoints
+  /favicon.ico:
+    get:
+      summary: "GET favicon.ico"
+      operationId: "getFavicon"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "array"
+                items:
+                  type: "string"
+                  format: "byte"
+  /api/bot/info:
+    get:
+      summary: "GET api/bot/info"
+      operationId: "getBotInfo"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+  /api/bot/info/owner:
+    get:
+      summary: "GET api/bot/info/owner"
+      operationId: "getBotOwner"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+  # Guild related endpoints
+  /guilds:
+    get:
+      summary: Get all guilds
+      description: Returns a list of all guilds the bot has access to
+      operationId: getGuilds
+      responses:
+        '200':
+          description: A list of guilds
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Guild'
+
+  /guilds/{guildId}:
+    get:
+      summary: Get guild information
+      description: Returns detailed information about a specific guild
+      operationId: getGuild
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detailed guild information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Guild'
+        '404':
+          description: Guild not found
+
+  /guilds/{guildId}/channels:
+    get:
+      summary: Get guild channels
+      description: Returns all channels in a specific guild
+      operationId: getGuildChannels
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of channels in the guild
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Channel'
+        '404':
+          description: Guild not found
+
+  /guilds/{guildId}/members:
+    get:
+      summary: Get guild members
+      description: Returns members of a specific guild
+      operationId: getGuildMembers
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+        - name: after
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Get members after this user ID
+      responses:
+        '200':
+          description: A list of members in the guild
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GuildMember'
+        '404':
+          description: Guild not found
+
+  /guilds/{guildId}/members/{userId}:
+    get:
+      summary: Get guild member
+      description: Returns a specific member of a guild
+      operationId: getGuildMember
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Guild member information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuildMember'
+        '404':
+          description: Guild or member not found
+
+  /guilds/{guildId}/roles:
+    get:
+      summary: Get guild roles
+      description: Returns all roles in a specific guild
+      operationId: getGuildRoles
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of roles in the guild
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+        '404':
+          description: Guild not found
+
+  /guilds/{guildId}/emojis:
+    get:
+      summary: Get guild emojis
+      description: Returns all emojis in a specific guild
+      operationId: getGuildEmojis
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of emojis in the guild
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Emoji'
+        '404':
+          description: Guild not found
+
+  /guilds/{guildId}/bans:
+    get:
+      summary: Get guild bans
+      description: Returns banned users in a specific guild
+      operationId: getGuildBans
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of banned users in the guild
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ban'
+        '404':
+          description: Guild not found
+
+  # Channel related endpoints
+  /channels/{channelId}:
+    get:
+      summary: Get channel information
+      description: Returns detailed information about a specific channel
+      operationId: getChannel
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detailed channel information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Channel'
+        '404':
+          description: Channel not found
+
+  /channels/{channelId}/messages:
+    get:
+      summary: Get channel messages
+      description: Returns messages from a specific channel
+      operationId: getChannelMessages
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+        - name: before
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Get messages before this message ID
+        - name: after
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Get messages after this message ID
+        - name: around
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Get messages around this message ID
+      responses:
+        '200':
+          description: A list of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Message'
+        '404':
+          description: Channel not found
+
+    post:
+      summary: Send message
+      description: Sends a message to a specific channel
+      operationId: sendChannelMessage
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageCreateRequest'
+      responses:
+        '201':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '404':
+          description: Channel not found
+
+  /channels/{channelId}/messages/{messageId}:
+    get:
+      summary: Get message
+      description: Returns a specific message from a channel
+      operationId: getChannelMessage
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Message information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '404':
+          description: Channel or message not found
+
+    patch:
+      summary: Edit message
+      description: Edits a message in a specific channel
+      operationId: editChannelMessage
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageEditRequest'
+      responses:
+        '200':
+          description: Message edited successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '404':
+          description: Channel or message not found
+
+    delete:
+      summary: Delete message
+      description: Deletes a message from a specific channel
+      operationId: deleteChannelMessage
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Message deleted successfully
+        '404':
+          description: Channel or message not found
+
+  /channels/{channelId}/pins:
+    get:
+      summary: Get pinned messages
+      description: Returns all pinned messages in a specific channel
+      operationId: getChannelPins
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of pinned messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Message'
+        '404':
+          description: Channel not found
+
+  # User related endpoints
+  /users:
+    get:
+      summary: Get all users
+      description: Returns a list of all users the bot can see
+      operationId: getUsers
+      responses:
+        '200':
+          description: A list of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+  /users/{userId}:
+    get:
+      summary: Get user information
+      description: Returns detailed information about a specific user
+      operationId: getUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detailed user information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+
+  /users/{userId}/dm:
+    get:
+      summary: Get DM channel
+      description: Returns the DM channel for a specific user
+      operationId: getUserDmChannel
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The DM channel for the user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Channel'
+        '404':
+          description: User not found
+
+    post:
+      summary: Create DM channel
+      description: Creates a DM channel with a specific user
+      operationId: createUserDmChannel
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: DM channel created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Channel'
+        '404':
+          description: User not found
+
+  # Events endpoints
+  /events:
+    get:
+      summary: Get events by type
+      description: Returns events of a specific type
+      operationId: getEvents
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [
+              # Connection events
+              "READY", "RESUMED", "RECONNECTED", "DISCONNECTED", "SESSION_INVALIDATE", "SESSION_RESUME",
+
+              # Guild events
+              "GUILD_READY", "GUILD_JOIN", "GUILD_LEAVE", "GUILD_AVAILABLE", "GUILD_UNAVAILABLE",
+              "GUILD_UPDATE", "GUILD_BAN", "GUILD_UNBAN", "GUILD_MEMBER_JOIN", "GUILD_MEMBER_REMOVE",
+              "GUILD_MEMBER_UPDATE", "GUILD_MEMBER_AVAILABLE", "GUILD_MEMBER_SPEAKING",
+              "GUILD_VOICE_JOIN", "GUILD_VOICE_MOVE", "GUILD_VOICE_LEAVE", "GUILD_VOICE_SELF_MUTE",
+              "GUILD_VOICE_SELF_DEAF", "GUILD_VOICE_SERVER_MUTE", "GUILD_VOICE_SERVER_DEAF",
+              "GUILD_VOICE_STREAM", "GUILD_VOICE_SUPPRESS", "GUILD_EMOJIS_UPDATE", "GUILD_STICKERS_UPDATE",
+              "GUILD_INTEGRATION_UPDATE", "GUILD_BOOST", "GUILD_INVITE_CREATE", "GUILD_INVITE_DELETE",
+
+              # Channel events
+              "CHANNEL_CREATE", "CHANNEL_UPDATE", "CHANNEL_DELETE", "CHANNEL_PINS_UPDATE",
+
+              # Message events
+              "MESSAGE_RECEIVED", "MESSAGE_UPDATE", "MESSAGE_DELETE", "MESSAGE_DELETE_BULK",
+              "MESSAGE_REACTION_ADD", "MESSAGE_REACTION_REMOVE", "MESSAGE_REACTION_REMOVE_ALL",
+              "MESSAGE_REACTION_REMOVE_EMOJI", "MESSAGE_EMBED_UPDATE",
+
+              # User events
+              "USER_UPDATE", "USER_ACTIVITY_START", "USER_ACTIVITY_END", "USER_STATUS_UPDATE",
+              "USER_TYPING_START", "USER_TYPING_STOP", "USER_ACTIVITY_UPDATE", "USER_NAME_UPDATE",
+              "USER_AVATAR_UPDATE", "USER_DISCRIMINATOR_UPDATE",
+
+              # Voice events
+              "VOICE_SERVER_UPDATE", "VOICE_STATE_UPDATE",
+
+              # Interaction events
+              "INTERACTION_CREATE", "SLASH_COMMAND", "BUTTON_INTERACTION", "SELECT_MENU_INTERACTION",
+              "MODAL_INTERACTION", "AUTOCOMPLETE_INTERACTION", "COMMAND_AUTOCOMPLETE_INTERACTION",
+
+              # Thread events
+              "THREAD_CREATE", "THREAD_UPDATE", "THREAD_DELETE", "THREAD_MEMBER_JOIN",
+              "THREAD_MEMBER_LEAVE", "THREAD_MEMBER_UPDATE", "THREAD_MEMBERS_UPDATE",
+
+              # Role events
+              "ROLE_CREATE", "ROLE_UPDATE", "ROLE_DELETE",
+
+              # Stage events
+              "STAGE_INSTANCE_CREATE", "STAGE_INSTANCE_UPDATE", "STAGE_INSTANCE_DELETE",
+
+              # Scheduled events
+              "SCHEDULED_EVENT_CREATE", "SCHEDULED_EVENT_UPDATE", "SCHEDULED_EVENT_DELETE",
+              "SCHEDULED_EVENT_USER_ADD", "SCHEDULED_EVENT_USER_REMOVE",
+
+              # Application command events
+              "APPLICATION_COMMAND_CREATE", "APPLICATION_COMMAND_UPDATE", "APPLICATION_COMMAND_DELETE",
+              "APPLICATION_COMMAND_PERMISSIONS_UPDATE",
+
+              # Audit log events
+              "AUDIT_LOG_ENTRY_CREATE",
+
+              # Forum events
+              "FORUM_TAG_CREATE", "FORUM_TAG_UPDATE", "FORUM_TAG_DELETE",
+
+              # Bot-specific events
+              "GUILD_MEMBER_VERIFY", "SELF_UPDATE", "SHUTDOWN", "HTTP_REQUEST"
+            ]
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+        - name: before
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Get events before this event ID
+      responses:
+        '200':
+          description: A list of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+        '400':
+          description: Invalid type parameter
+
+    delete:
+      summary: Clear events
+      description: Clears events of a specific type
+      operationId: clearEvents
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [
+              # Connection events
+              "READY", "RESUMED", "RECONNECTED", "DISCONNECTED", "SESSION_INVALIDATE", "SESSION_RESUME",
+
+              # Guild events
+              "GUILD_READY", "GUILD_JOIN", "GUILD_LEAVE", "GUILD_AVAILABLE", "GUILD_UNAVAILABLE",
+              "GUILD_UPDATE", "GUILD_BAN", "GUILD_UNBAN", "GUILD_MEMBER_JOIN", "GUILD_MEMBER_REMOVE",
+              "GUILD_MEMBER_UPDATE", "GUILD_MEMBER_AVAILABLE", "GUILD_MEMBER_SPEAKING",
+              "GUILD_VOICE_JOIN", "GUILD_VOICE_MOVE", "GUILD_VOICE_LEAVE", "GUILD_VOICE_SELF_MUTE",
+              "GUILD_VOICE_SELF_DEAF", "GUILD_VOICE_SERVER_MUTE", "GUILD_VOICE_SERVER_DEAF",
+              "GUILD_VOICE_STREAM", "GUILD_VOICE_SUPPRESS", "GUILD_EMOJIS_UPDATE", "GUILD_STICKERS_UPDATE",
+              "GUILD_INTEGRATION_UPDATE", "GUILD_BOOST", "GUILD_INVITE_CREATE", "GUILD_INVITE_DELETE",
+
+              # Channel events
+              "CHANNEL_CREATE", "CHANNEL_UPDATE", "CHANNEL_DELETE", "CHANNEL_PINS_UPDATE",
+
+              # Message events
+              "MESSAGE_RECEIVED", "MESSAGE_UPDATE", "MESSAGE_DELETE", "MESSAGE_DELETE_BULK",
+              "MESSAGE_REACTION_ADD", "MESSAGE_REACTION_REMOVE", "MESSAGE_REACTION_REMOVE_ALL",
+              "MESSAGE_REACTION_REMOVE_EMOJI", "MESSAGE_EMBED_UPDATE",
+
+              # User events
+              "USER_UPDATE", "USER_ACTIVITY_START", "USER_ACTIVITY_END", "USER_STATUS_UPDATE",
+              "USER_TYPING_START", "USER_TYPING_STOP", "USER_ACTIVITY_UPDATE", "USER_NAME_UPDATE",
+              "USER_AVATAR_UPDATE", "USER_DISCRIMINATOR_UPDATE",
+
+              # Voice events
+              "VOICE_SERVER_UPDATE", "VOICE_STATE_UPDATE",
+
+              # Interaction events
+              "INTERACTION_CREATE", "SLASH_COMMAND", "BUTTON_INTERACTION", "SELECT_MENU_INTERACTION",
+              "MODAL_INTERACTION", "AUTOCOMPLETE_INTERACTION", "COMMAND_AUTOCOMPLETE_INTERACTION",
+
+              # Thread events
+              "THREAD_CREATE", "THREAD_UPDATE", "THREAD_DELETE", "THREAD_MEMBER_JOIN",
+              "THREAD_MEMBER_LEAVE", "THREAD_MEMBER_UPDATE", "THREAD_MEMBERS_UPDATE",
+
+              # Role events
+              "ROLE_CREATE", "ROLE_UPDATE", "ROLE_DELETE",
+
+              # Stage events
+              "STAGE_INSTANCE_CREATE", "STAGE_INSTANCE_UPDATE", "STAGE_INSTANCE_DELETE",
+
+              # Scheduled events
+              "SCHEDULED_EVENT_CREATE", "SCHEDULED_EVENT_UPDATE", "SCHEDULED_EVENT_DELETE",
+              "SCHEDULED_EVENT_USER_ADD", "SCHEDULED_EVENT_USER_REMOVE",
+
+              # Application command events
+              "APPLICATION_COMMAND_CREATE", "APPLICATION_COMMAND_UPDATE", "APPLICATION_COMMAND_DELETE",
+              "APPLICATION_COMMAND_PERMISSIONS_UPDATE",
+
+              # Audit log events
+              "AUDIT_LOG_ENTRY_CREATE",
+
+              # Forum events
+              "FORUM_TAG_CREATE", "FORUM_TAG_UPDATE", "FORUM_TAG_DELETE",
+
+              # Bot-specific events
+              "GUILD_MEMBER_VERIFY", "SELF_UPDATE", "SHUTDOWN", "HTTP_REQUEST"
+            ]
+      responses:
+        '204':
+          description: Events cleared successfully
+        '400':
+          description: Invalid type parameter
+
+  # WebSocket endpoint for real-time events
+  /ws:
+    get:
+      summary: WebSocket connection
+      description: Endpoint for WebSocket connection to receive real-time events
+      operationId: webSocketConnect
+      responses:
+        '101':
+          description: WebSocket connection established
+
+components:
+  schemas:
+    # Core schemas
+    Event:
+      type: object
+      required:
+        - id
+        - type
+        - timestamp
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the event
+        type:
+          type: string
+          description: Type of the event
+        timestamp:
+          type: string
+          format: date-time
+          description: When the event occurred
+        data:
+          type: object
+          description: Event-specific data payload
+
+    # Guild related schemas
+    Guild:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          description: Discord ID of the guild
+        name:
+          type: string
+          description: Name of the guild
+        icon:
+          type: string
+          format: uri
+          description: URL of the guild icon
+        iconHash:
+          type: string
+          description: Hash of the guild icon
+        splash:
+          type: string
+          description: Hash of the guild splash image
+        discoverySplash:
+          type: string
+          description: Hash of the guild discovery splash image
+        owner:
+          type: boolean
+          description: Whether the bot is the owner of the guild
+        ownerId:
+          type: string
+          description: ID of the guild owner
+        permissions:
+          type: string
+          description: Permissions for the bot in the guild (as a bit set)
+        region:
+          type: string
+          description: Voice region of the guild
+        afkChannelId:
+          type: string
+          description: ID of the AFK channel
+        afkTimeout:
+          type: integer
+          description: AFK timeout in seconds
+        widgetEnabled:
+          type: boolean
+          description: Whether the widget is enabled
+        widgetChannelId:
+          type: string
+          description: Channel ID for the guild widget
+        verificationLevel:
+          type: integer
+          description: Verification level required for the guild
+        defaultMessageNotifications:
+          type: integer
+          description: Default message notification level
+        explicitContentFilter:
+          type: integer
+          description: Explicit content filter level
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Role'
+          description: Roles in the guild
+        emojis:
+          type: array
+          items:
+            $ref: '#/components/schemas/Emoji'
+          description: Custom emojis in the guild
+        features:
+          type: array
+          items:
+            type: string
+          description: Enabled guild features
+        mfaLevel:
+          type: integer
+          description: Required MFA level for the guild
+        applicationId:
+          type: string
+          description: Application ID of the guild creator if bot-created
+        systemChannelId:
+          type: string
+          description: ID of the system channel
+        systemChannelFlags:
+          type: integer
+          description: System channel flags
+        rulesChannelId:
+          type: string
+          description: ID of the rules channel
+        joinedAt:
+          type: string
+          format: date-time
+          description: When the bot joined the guild
+        large:
+          type: boolean
+          description: Whether this is considered a large guild
+        unavailable:
+          type: boolean
+          description: Whether the guild is unavailable
+        memberCount:
+          type: integer
+          description: Total number of members in the guild
+        voiceStates:
+          type: array
+          items:
+            $ref: '#/components/schemas/VoiceState'
+          description: Voice states of members in the guild
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/GuildMember'
+          description: Members in the guild
+        channels:
+          type: array
+          items:
+            $ref: '#/components/schemas/Channel'
+          description: Channels in the guild
+        threads:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThreadChannel'
+          description: Threads in the guild
+        presences:
+          type: array
+          items:
+            $ref: '#/components/schemas/Presence'
+          description: Presences of the members in the guild
+        maxPresences:
+          type: integer
+          description: Maximum number of presences for the guild
+        maxMembers:
+          type: integer
+          description: Maximum number of members for the guild
+        vanityUrlCode:
+          type: string
+          description: Vanity URL code for the guild
+        description:
+          type: string
+          description: Description of the guild
+        banner:
+          type: string
+          description: Banner hash
+        premiumTier:
+          type: integer
+          description: Premium tier
+        premiumSubscriptionCount:
+          type: integer
+          description: Number of boosts this guild currently has
+        preferredLocale:
+          type: string
+          description: Preferred locale
+        publicUpdatesChannelId:
+          type: string
+          description: ID of the public updates channel
+        maxVideoChannelUsers:
+          type: integer
+          description: Maximum amount of users in a video channel
+        approximateMemberCount:
+          type: integer
+          description: Approximate number of members in this guild
+        approximatePresenceCount:
+          type: integer
+          description: Approximate number of presences in this guild
+        welcomeScreen:
+          type: object
+          description: Welcome screen object
+        nsfwLevel:
+          type: integer
+          description: NSFW level
+        stickers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sticker'
+          description: Custom stickers in the guild
+
+    GuildMember:
+      type: object
+      required:
+        - user
+        - joinedAt
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+          description: The user this guild member represents
+        nick:
+          type: string
+          description: Guild nickname
+        avatar:
+          type: string
+          description: Guild avatar hash
+        roles:
+          type: array
+          items:
+            type: string
+          description: Role IDs
+        joinedAt:
+          type: string
+          format: date-time
+          description: When the user joined the guild
+        premiumSince:
+          type: string
+          format: date-time
+          description: When the user started boosting the guild
+        deaf:
+          type: boolean
+          description: Whether the user is deafened in voice channels
+        mute:
+          type: boolean
+          description: Whether the user is muted in voice channels
+        pending:
+          type: boolean
+          description: Whether the user has not yet passed the guild's Membership Screening requirements
+        permissions:
+          type: string
+          description: Guild permissions
+        communicationDisabledUntil:
+          type: string
+          format: date-time
+          description: When the user's timeout will expire
+
+    Ban:
+      type: object
+      required:
+        - reason
+        - user
+      properties:
+        reason:
+          type: string
+          description: The reason for the ban
+        user:
+          $ref: '#/components/schemas/User'
+          description: The banned user
+
+    # Channel related schemas
+    Channel:
+      type: object
+      required:
+        - id
+        - type
+      properties:
+        id:
+          type: string
+          description: Discord ID of the channel
+        type:
+          type: integer
+          description: Type of the channel
+          enum: [0, 1, 2, 3, 4, 5, 6, 10, 11, 12, 13, 14, 15]
+        guildId:
+          type: string
+          description: ID of the guild this channel belongs to
+        position:
+          type: integer
+          description: Position of the channel
+        permissionOverwrites:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermissionOverwrite'
+          description: Permission overwrites for the channel
+        name:
+          type: string
+          description: Name of the channel
+        topic:
+          type: string
+          description: Topic of the channel
+        nsfw:
+          type: boolean
+          description: Whether the channel is NSFW
+        lastMessageId:
+          type: string
+          description: ID of the last message sent in this channel
+        bitrate:
+          type: integer
+          description: Bitrate of a voice channel
+        userLimit:
+          type: integer
+          description: User limit of a voice channel
+        rateLimitPerUser:
+          type: integer
+          description: Slow mode duration in seconds
+        recipients:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+          description: Recipients of a DM
+        icon:
+          type: string
+          description: Icon hash
+        ownerId:
+          type: string
+          description: ID of the DM creator
+        applicationId:
+          type: string
+          description: ID of the application that created this channel
+        parentId:
+          type: string
+          description: ID of the parent category for this channel
+        lastPinTimestamp:
+          type: string
+          format: date-time
+          description: When the last pinned message was pinned
+        rtcRegion:
+          type: string
+          description: Voice region of the channel
+        videoQualityMode:
+          type: integer
+          description: Video quality mode of the channel
+        messageCount:
+          type: integer
+          description: Number of messages in a thread
+        memberCount:
+          type: integer
+          description: Number of members in a thread
+        threadMetadata:
+          $ref: '#/components/schemas/ThreadMetadata'
+          description: Thread-specific fields
+        member:
+          $ref: '#/components/schemas/ThreadMember'
+          description: Thread member for the current user
+        defaultAutoArchiveDuration:
+          type: integer
+          description: Default auto archive duration for threads
+        permissions:
+          type: string
+          description: Computed permissions for the invoking user
+        flags:
+          type: integer
+          description: Channel flags
+        totalMessageSent:
+          type: integer
+          description: Number of messages ever sent in a thread
+        availableTags:
+          type: array
+          items:
+            $ref: '#/components/schemas/ForumTag'
+          description: Available tags for a forum channel
+        appliedTags:
+          type: array
+          items:
+            type: string
+          description: IDs of tags applied to a forum thread
+        defaultReactionEmoji:
+          $ref: '#/components/schemas/DefaultReaction'
+          description: Default reaction for a forum channel
+        defaultThreadRateLimitPerUser:
+          type: integer
+          description: Default slow mode for forum threads
+        defaultSortOrder:
+          type: integer
+          description: Default sort order for forum posts
+        defaultForumLayout:
+          type: integer
+          description: Default forum layout view
+
+    ThreadChannel:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Channel'
+        - type: object
+          properties:
+            archived:
+              type: boolean
+              description: Whether the thread is archived
+            autoArchiveDuration:
+              type: integer
+              description: Auto archive duration in minutes
+            locked:
+              type: boolean
+              description: Whether the thread is locked
+            invitable:
+              type: boolean
+              description: Whether non-moderators can add others to the thread
+            createdAt:
+              type: string
+              format: date-time
+              description: When the thread was created
+
+    ThreadMember:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the thread
+        userId:
+          type: string
+          description: The ID of the user
+        joinTimestamp:
+          type: string
+          format: date-time
+          description: When the user joined the thread
+        flags:
+          type: integer
+          description: Any flags on the thread member
+
+    PermissionOverwrite:
+      type: object
+      required:
+        - id
+        - type
+        - allow
+        - deny
+      properties:
+        id:
+          type: string
+          description: Role or user ID
+        type:
+          type: integer
+          description: Type of overwrite (0 for role, 1 for member)
+        allow:
+          type: string
+          description: Allowed permission bit set
+        deny:
+          type: string
+          description: Denied permission bit set
+
+    ForumTag:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          description: ID of the tag
+        name:
+          type: string
+          description: Name of the tag
+        moderated:
+          type: boolean
+          description: Whether this tag can only be added or removed by a moderator
+        emojiId:
+          type: string
+          description: ID of the emoji for this tag
+        emojiName:
+          type: string
+          description: Name of the emoji for this tag
+
+    DefaultReaction:
+      type: object
+      properties:
+        emojiId:
+          type: string
+          description: ID of the emoji
+        emojiName:
+          type: string
+          description: Name of the emoji
+
+    # Message related schemas
+    Message:
+      type: object
+      required:
+        - id
+        - channelId
+        - author
+        - content
+        - timestamp
+      properties:
+        id:
+          type: string
+          description: Discord ID of the message
+        channelId:
+          type: string
+          description: ID of the channel the message was sent in
+        guildId:
+          type: string
+          description: ID of the guild the message was sent in
+        author:
+          $ref: '#/components/schemas/User'
+          description: Author of the message
+        member:
+          $ref: '#/components/schemas/GuildMember'
+          description: Member properties for this message's author
+        content:
+          type: string
+          description: Content of the message
+        timestamp:
+          type: string
+          format: date-time
+          description: When the message was sent
+        editedTimestamp:
+          type: string
+          format: date-time
+          description: When the message was last edited
+        tts:
+          type: boolean
+          description: Whether the message is TTS
+        mentionEveryone:
+          type: boolean
+          description: Whether the message mentions @everyone
+        mentions:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+          description: Users mentioned in the message
+        mentionRoles:
+          type: array
+          items:
+            type: string
+          description: Roles mentioned in the message
+        mentionChannels:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChannelMention'
+          description: Channels mentioned in the message
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
+          description: Attachments in the message
+        embeds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Embed'
+          description: Embeds in the message
+        reactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Reaction'
+          description: Reactions to the message
+        nonce:
+          type: string
+          description: Used for validating a message was sent
+        pinned:
+          type: boolean
+          description: Whether the message is pinned
+        webhookId:
+          type: string
+          description: If the message is generated by a webhook, this is the webhook's ID
+        type:
+          type: integer
+          description: Type of message
+        activity:
+          $ref: '#/components/schemas/MessageActivity'
+          description: Activity data for Rich Presence
+        application:
+          $ref: '#/components/schemas/MessageApplication'
+          description: Application data for Rich Presence
+        applicationId:
+          type: string
+          description: ID of the application
+        messageReference:
+          $ref: '#/components/schemas/MessageReference'
+          description: Data for a message reference
+        flags:
+          type: integer
+          description: Message flags
+        referencedMessage:
+          $ref: '#/components/schemas/Message'
+          description: The message that was replied to
+        interaction:
+          $ref: '#/components/schemas/MessageInteraction'
+          description: Interaction data
+        thread:
+          $ref: '#/components/schemas/ThreadChannel'
+          description: Thread that was started from this message
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageComponent'
+          description: Components in the message
+        stickers:
+          type: array
+          items:
+            $ref: '#/components/schemas/StickerItem'
+          description: Stickers sent with the message
+
+    MessageCreateRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          description: The message content
+        tts:
+          type: boolean
+          description: Whether this is a TTS message
+        embeds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Embed'
+          description: Embedded rich content
+        allowedMentions:
+          $ref: '#/components/schemas/AllowedMentions'
+          description: Allowed mentions object
+        messageReference:
+          $ref: '#/components/schemas/MessageReference'
+          description: Message reference for a reply
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageComponent'
+          description: Message components
+        stickers:
+          type: array
+          items:
+            type: string
+          description: IDs of stickers to send
+        flags:
+          type: integer
+          description: Message flags (only SUPPRESS_EMBEDS can be set)
+
+    MessageEditRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          description: The message content
+        embeds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Embed'
+          description: Embedded rich content
+        flags:
+          type: integer
+          description: Message flags (only SUPPRESS_EMBEDS can be set/unset)
+        allowedMentions:
+          $ref: '#/components/schemas/AllowedMentions'
+          description: Allowed mentions object
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageComponent'
+          description: Message components
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
+          description: Attached files to keep
+
+    AllowedMentions:
+      type: object
+      properties:
+        parse:
+          type: array
+          items:
+            type: string
+            enum: ["roles", "users", "everyone"]
+          description: Allowed mention types to parse
+        roles:
+          type: array
+          items:
+            type: string
+          description: Role IDs to mention
+        users:
+          type: array
+          items:
+            type: string
+          description: User IDs to mention
+        repliedUser:
+          type: boolean
+          description: Whether to mention the author of the message being replied to
+
+    Embed:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Title of the embed
+        type:
+          type: string
+          description: Type of embed
+        description:
+          type: string
+          description: Description of the embed
+        url:
+          type: string
+          format: uri
+          description: URL of the embed
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the embed content
+        color:
+          type: integer
+          description: Color code of the embed
+        footer:
+          $ref: '#/components/schemas/EmbedFooter'
+          description: Footer information
+        image:
+          $ref: '#/components/schemas/EmbedMedia'
+          description: Image information
+        thumbnail:
+          $ref: '#/components/schemas/EmbedMedia'
+          description: Thumbnail information
+        video:
+          $ref: '#/components/schemas/EmbedMedia'
+          description: Video information
+        provider:
+          $ref: '#/components/schemas/EmbedProvider'
+          description: Provider information
+        author:
+          $ref: '#/components/schemas/EmbedAuthor'
+          description: Author information
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmbedField'
+          description: Fields in the embed
+
+    EmbedFooter:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: Footer text
+        iconUrl:
+          type: string
+          format: uri
+          description: URL of footer icon
+        proxyIconUrl:
+          type: string
+          format: uri
+          description: Proxied URL of footer icon
+
+    EmbedMedia:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Source URL of media
+        proxyUrl:
+          type: string
+          format: uri
+          description: Proxied URL of media
+        height:
+          type: integer
+          description: Height of media
+        width:
+          type: integer
+          description: Width of media
+
+    EmbedProvider:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of provider
+        url:
+          type: string
+          format: uri
+          description: URL of provider
+
+    EmbedAuthor:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Name of author
+        url:
+          type: string
+          format: uri
+          description: URL of author
+        iconUrl:
+          type: string
+          format: uri
+          description: URL of author icon
+        proxyIconUrl:
+          type: string
+          format: uri
+          description: Proxied URL of author icon
+
+    EmbedField:
+      type: object
+      required:
+        - name
+        - value
+      properties:
+        name:
+          type: string
+          description: Name of the field
+        value:
+          type: string
+          description: Value of the field
+        inline:
+          type: boolean
+          description: Whether or not this field should display inline
+
+    Reaction:
+      type: object
+      properties:
+        count:
+          type: integer
+          description: Number of reactions
+        me:
+          type: boolean
+          description: Whether the current user reacted
+        emoji:
+          $ref: '#/components/schemas/Emoji'
+          description: Emoji information
+
+    ChannelMention:
+      type: object
+      required:
+        - id
+        - guildId
+        - type
+        - name
+      properties:
+        id:
+          type: string
+          description: ID of the channel
+        guildId:
+          type: string
+          description: ID of the guild containing the channel
+        type:
+          type: integer
+          description: Type of channel
+        name:
+          type: string
+          description: Name of the channel
+
+    Attachment:
+      type: object
+      required:
+        - id
+        - filename
+        - size
+        - url
+        - proxyUrl
+      properties:
+        id:
+          type: string
+          description: ID of the attachment
+        filename:
+          type: string
+          description: Name of the file
+        description:
+          type: string
+          description: Description of the file
+        contentType:
+          type: string
+          description: MIME type of the file
+        size:
+          type: integer
+          description: Size of the file in bytes
+        url:
+          type: string
+          format: uri
+          description: Source URL of the file
+        proxyUrl:
+          type: string
+          format: uri
+          description: Proxied URL of the file
+        height:
+          type: integer
+          description: Height of the file (if image)
+        width:
+          type: integer
+          description: Width of the file (if image)
+        ephemeral:
+          type: boolean
+          description: Whether this attachment is ephemeral
+
+    MessageActivity:
+      type: object
+      properties:
+        type:
+          type: integer
+          description: Type of message activity
+        partyId:
+          type: string
+          description: Party ID for Rich Presence
+
+    MessageApplication:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID of the application
+        coverImage:
+          type: string
+          description: Cover image hash
+        description:
+          type: string
+          description: Application description
+        icon:
+          type: string
+          description: Application icon hash
+        name:
+          type: string
+          description: Application name
+
+    MessageReference:
+      type: object
+      properties:
+        messageId:
+          type: string
+          description: ID of the referenced message
+        channelId:
+          type: string
+          description: ID of the channel the message was sent in
+        guildId:
+          type: string
+          description: ID of the guild the message was sent in
+        failIfNotExists:
+          type: boolean
+          description: Whether to error if the referenced message doesn't exist
+
+    MessageInteraction:
+      type: object
+      required:
+        - id
+        - type
+        - name
+        - user
+      properties:
+        id:
+          type: string
+          description: ID of the interaction
+        type:
+          type: integer
+          description: Type of interaction
+        name:
+          type: string
+          description: Name of the command
+        user:
+          $ref: '#/components/schemas/User'
+          description: User who invoked the interaction
+        member:
+          $ref: '#/components/schemas/GuildMember'
+          description: Member who invoked the interaction
+
+    MessageComponent:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: integer
+          description: Component type (1 = ActionRow, 2 = Button, 3 = SelectMenu, 4 = TextInput)
+        customId:
+          type: string
+          description: Custom identifier for the component
+        disabled:
+          type: boolean
+          description: Whether the component is disabled
+        style:
+          type: integer
+          description: Button style (for buttons)
+        label:
+          type: string
+          description: Text displayed on the component
+        emoji:
+          $ref: '#/components/schemas/Emoji'
+          description: Emoji displayed on the component
+        url:
+          type: string
+          format: uri
+          description: URL for link buttons
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/SelectOption'
+          description: Options for select menus
+        placeholder:
+          type: string
+          description: Custom placeholder text for select menus and text inputs
+        minValues:
+          type: integer
+          description: Minimum number of selections required (select menus)
+        maxValues:
+          type: integer
+          description: Maximum number of selections allowed (select menus)
+        minLength:
+          type: integer
+          description: Minimum input length for text inputs
+        maxLength:
+          type: integer
+          description: Maximum input length for text inputs
+        required:
+          type: boolean
+          description: Whether this component is required to be filled (text inputs)
+        value:
+          type: string
+          description: Pre-filled value for text inputs
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageComponent'
+          description: Child components (for ActionRows)
+
+    SelectOption:
+      type: object
+      required:
+        - label
+        - value
+      properties:
+        label:
+          type: string
+          description: User-facing name of the option
+        value:
+          type: string
+          description: Dev-defined value of the option
+        description:
+          type: string
+          description: Additional description of the option
+        emoji:
+          $ref: '#/components/schemas/Emoji'
+          description: Emoji displayed on this option
+        default:
+          type: boolean
+          description: Whether this option is selected by default
+
+    StickerItem:
+      type: object
+      required:
+        - id
+        - name
+        - formatType
+      properties:
+        id:
+          type: string
+          description: ID of the sticker
+        name:
+          type: string
+          description: Name of the sticker
+        formatType:
+          type: integer
+          description: Format type of the sticker
+
+    # User related schemas
+    User:
+      type: object
+      required:
+        - id
+        - username
+        - discriminator
+      properties:
+        id:
+          type: string
+          description: Discord ID of the user
+        username:
+          type: string
+          description: Username of the user
+        discriminator:
+          type: string
+          description: 4-digit discord tag
+        global_name:
+          type: string
+          description: Global display name of the user
+        avatar:
+          type: string
+          description: Avatar hash
+        bot:
+          type: boolean
+          description: Whether the user is a bot
+        system:
+          type: boolean
+          description: Whether the user is an official Discord system user
+        mfaEnabled:
+          type: boolean
+          description: Whether the user has two-factor authentication enabled
+        banner:
+          type: string
+          description: User banner hash
+        accentColor:
+          type: integer
+          description: User banner color as an integer representation of a hex color
+        locale:
+          type: string
+          description: User's chosen language option
+        verified:
+          type: boolean
+          description: Whether the email on this account has been verified
+        email:
+          type: string
+          format: email
+          description: User's email
+        flags:
+          type: integer
+          description: User flags
+        premiumType:
+          type: integer
+          description: Type of Nitro subscription
+        publicFlags:
+          type: integer
+          description: Public flags on the user's account
+
+    Presence:
+      type: object
+      properties:
+        userId:
+          type: string
+          description: ID of the user
+        status:
+          type: string
+          enum: ["online", "idle", "dnd", "offline"]
+          description: User's status
+        activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Activity'
+          description: User's current activities
+        clientStatus:
+          $ref: '#/components/schemas/ClientStatus'
+          description: User's platform-specific status
+
+    Activity:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+          description: Activity name
+        type:
+          type: integer
+          description: Activity type
+        url:
+          type: string
+          format: uri
+          description: Stream URL
+        createdAt:
+          type: integer
+          description: Unix timestamp when the activity was created
+        timestamps:
+          $ref: '#/components/schemas/ActivityTimestamps'
+          description: Start and end timestamps
+        applicationId:
+          type: string
+          description: Application ID for the game
+        details:
+          type: string
+          description: What the player is currently doing
+        state:
+          type: string
+          description: User's party status
+        emoji:
+          $ref: '#/components/schemas/Emoji'
+          description: Emoji used for custom status
+        party:
+          $ref: '#/components/schemas/ActivityParty'
+          description: Information for the current party
+        assets:
+          $ref: '#/components/schemas/ActivityAssets'
+          description: Images for the presence and their hover texts
+        secrets:
+          $ref: '#/components/schemas/ActivitySecrets'
+          description: Secrets for Rich Presence joining and spectating
+        instance:
+          type: boolean
+          description: Whether the activity is an instanced game session
+        flags:
+          type: integer
+          description: Activity flags
+        buttons:
+          type: array
+          items:
+            type: string
+          description: Custom button labels shown in the Rich Presence
+
+    ActivityTimestamps:
+      type: object
+      properties:
+        start:
+          type: integer
+          description: Unix timestamp of when the activity started
+        end:
+          type: integer
+          description: Unix timestamp of when the activity ends
+
+    ActivityParty:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Party ID
+        size:
+          type: array
+          items:
+            type: integer
+          description: [current_size, max_size]
+
+    ActivityAssets:
+      type: object
+      properties:
+        largeImage:
+          type: string
+          description: Key for a large image
+        largeText:
+          type: string
+          description: Text displayed when hovering over the large image
+        smallImage:
+          type: string
+          description: Key for a small image
+        smallText:
+          type: string
+          description: Text displayed when hovering over the small image
+
+    ActivitySecrets:
+      type: object
+      properties:
+        join:
+          type: string
+          description: Secret for joining a party
+        spectate:
+          type: string
+          description: Secret for spectating a game
+        match:
+          type: string
+          description: Secret for a specific instanced match
+
+    ClientStatus:
+      type: object
+      properties:
+        desktop:
+          type: string
+          enum: ["online", "idle", "dnd", "offline"]
+          description: User's status on desktop
+        mobile:
+          type: string
+          enum: ["online", "idle", "dnd", "offline"]
+          description: User's status on mobile
+        web:
+          type: string
+          enum: ["online", "idle", "dnd", "offline"]
+          description: User's status on web
+
+    # Voice related schemas
+    VoiceState:
+      type: object
+      properties:
+        guildId:
+          type: string
+          description: Guild ID this voice state is for
+        channelId:
+          type: string
+          description: Channel ID this user is connected to
+        userId:
+          type: string
+          description: User ID this voice state is for
+        member:
+          $ref: '#/components/schemas/GuildMember'
+          description: Guild member this voice state is for
+        sessionId:
+          type: string
+          description: Session ID for this voice state
+        deaf:
+          type: boolean
+          description: Whether this user is deafened by the server
+        mute:
+          type: boolean
+          description: Whether this user is muted by the server
+        selfDeaf:
+          type: boolean
+          description: Whether this user is locally deafened
+        selfMute:
+          type: boolean
+          description: Whether this user is locally muted
+        selfStream:
+          type: boolean
+          description: Whether this user is streaming using "Go Live"
+        selfVideo:
+          type: boolean
+          description: Whether this user's camera is enabled
+        suppress:
+          type: boolean
+          description: Whether this user is muted by the current user
+        requestToSpeakTimestamp:
+          type: string
+          format: date-time
+          description: Time at which the user requested to speak
+
+    # Role related schemas
+    Role:
+      type: object
+      required:
+        - id
+        - name
+        - color
+        - hoist
+        - position
+        - permissions
+        - managed
+        - mentionable
+      properties:
+        id:
+          type: string
+          description: Role ID
+        name:
+          type: string
+          description: Role name
+        color:
+          type: integer
+          description: Integer representation of hexadecimal color code
+        hoist:
+          type: boolean
+          description: Whether this role is pinned in the user listing
+        icon:
+          type: string
+          description: Role icon hash
+        unicodeEmoji:
+          type: string
+          description: Role unicode emoji
+        position:
+          type: integer
+          description: Position of this role
+        permissions:
+          type: string
+          description: Permission bit set
+        managed:
+          type: boolean
+          description: Whether this role is managed by an integration
+        mentionable:
+          type: boolean
+          description: Whether this role can be mentioned
+        tags:
+          $ref: '#/components/schemas/RoleTags'
+          description: Role tags object
+
+    RoleTags:
+      type: object
+      properties:
+        botId:
+          type: string
+          description: ID of the bot this role belongs to
+        integrationId:
+          type: string
+          description: ID of the integration this role belongs to
+        premiumSubscriber:
+          type: boolean
+          description: Whether this is the server booster role
+        subscriptionListingId:
+          type: string
+          description: ID of this role's subscription SKU and listing
+        availableForPurchase:
+          type: boolean
+          description: Whether this role is available for purchase
+        guildConnections:
+          type: boolean
+          description: Whether this role is a guild's linked role
+
+    # Emoji related schemas
+    Emoji:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          description: Emoji ID
+        name:
+          type: string
+          description: Emoji name
+        roles:
+          type: array
+          items:
+            type: string
+          description: Roles allowed to use this emoji
+        user:
+          $ref: '#/components/schemas/User'
+          description: User that created this emoji
+        requireColons:
+          type: boolean
+          description: Whether this emoji must be wrapped in colons
+        managed:
+          type: boolean
+          description: Whether this emoji is managed
+        animated:
+          type: boolean
+          description: Whether this emoji is animated
+        available:
+          type: boolean
+          description: Whether this emoji can be used
+
+    # Sticker related schemas
+    Sticker:
+      type: object
+      required:
+        - id
+        - name
+        - formatType
+      properties:
+        id:
+          type: string
+          description: ID of the sticker
+        packId:
+          type: string
+          description: ID of the pack the sticker is from
+        name:
+          type: string
+          description: Name of the sticker
+        description:
+          type: string
+          description: Description of the sticker
+        tags:
+          type: string
+          description: Autocomplete/suggestion tags for the sticker
+        type:
+          type: integer
+          description: Type of sticker
+        formatType:
+          type: integer
+          description: Format type of the sticker
+        available:
+          type: boolean
+          description: Whether this sticker can be used
+        guildId:
+          type: string
+          description: ID of the guild that owns this sticker
+        user:
+          $ref: '#/components/schemas/User'
+          description: User that uploaded the sticker
+        sortValue:
+          type: integer
+          description: The standard sticker's sort order within its pack
+
+    # Interaction related schemas
+    Interaction:
+      type: object
+      required:
+        - id
+        - applicationId
+        - type
+        - token
+        - version
+      properties:
+        id:
+          type: string
+          description: ID of the interaction
+        applicationId:
+          type: string
+          description: ID of the application this interaction is for
+        type:
+          type: integer
+          description: Type of interaction
+        data:
+          $ref: '#/components/schemas/InteractionData'
+          description: Interaction data
+        guildId:
+          type: string
+          description: ID of the guild the interaction was sent from
+        channelId:
+          type: string
+          description: ID of the channel the interaction was sent from
+        member:
+          $ref: '#/components/schemas/GuildMember'
+          description: Guild member data for the invoking user
+        user:
+          $ref: '#/components/schemas/User'
+          description: User object for the invoking user
+        token:
+          type: string
+          description: Continuation token for responding to the interaction
+        version:
+          type: integer
+          description: Read-only property, always 1
+        message:
+          $ref: '#/components/schemas/Message'
+          description: For components, the message they were attached to
+        appPermissions:
+          type: string
+          description: Permissions the app or bot has within the channel the interaction was sent from
+        locale:
+          type: string
+          description: Selected language of the invoking user
+        guildLocale:
+          type: string
+          description: Guild's preferred locale
+
+    InteractionData:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Command ID
+        name:
+          type: string
+          description: Command name
+        type:
+          type: integer
+          description: Command type
+        resolved:
+          $ref: '#/components/schemas/InteractionResolvedData'
+          description: Resolved objects from the interaction
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApplicationCommandInteractionDataOption'
+          description: Parameters and values from the user
+        customId:
+          type: string
+          description: Custom ID of the component
+        componentType:
+          type: integer
+          description: Type of the component
+        values:
+          type: array
+          items:
+            type: string
+          description: Selected values (for select menus)
+        targetId:
+          type: string
+          description: ID of the user or message targeted by a context menu command
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageComponent'
+          description: Components submitted in a modal
+
+    InteractionResolvedData:
+      type: object
+      properties:
+        users:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/User'
+          description: Map of user IDs to user objects
+        members:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/GuildMember'
+          description: Map of user IDs to partial member objects
+        roles:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Role'
+          description: Map of role IDs to role objects
+        channels:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Channel'
+          description: Map of channel IDs to partial channel objects
+        messages:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Message'
+          description: Map of message IDs to partial message objects
+        attachments:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Attachment'
+          description: Map of attachment IDs to attachment objects
+
+    ApplicationCommandInteractionDataOption:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+          description: Name of the parameter
+        type:
+          type: integer
+          description: Type of the option
+        value:
+          description: Value of the option
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApplicationCommandInteractionDataOption'
+          description: Present if this option is a group or subcommand
+        focused:
+          type: boolean
+          description: True if this option is the currently focused option for autocomplete
+
+    # Event-specific schemas
+    GuildJoinEvent:
+      type: object
+      properties:
+        guild:
+          $ref: '#/components/schemas/Guild'
+          description: The guild that was joined
+
+    GuildLeaveEvent:
+      type: object
+      properties:
+        guild:
+          $ref: '#/components/schemas/Guild'
+          description: The guild that was left
+
+    MessageReceivedEvent:
+      type: object
+      properties:
+        message:
+          $ref: '#/components/schemas/Message'
+          description: The message that was received
+        isWebhookMessage:
+          type: boolean
+          description: Whether this message was sent by a webhook
+
+    MessageUpdateEvent:
+      type: object
+      properties:
+        messageId:
+          type: string
+          description: ID of the message that was updated
+        channelId:
+          type: string
+          description: ID of the channel containing the message
+        message:
+          $ref: '#/components/schemas/Message'
+          description: The updated message
+
+    MessageDeleteEvent:
+      type: object
+      properties:
+        messageId:
+          type: string
+          description: ID of the message that was deleted
+        channelId:
+          type: string
+          description: ID of the channel containing the message
+        guildId:
+          type: string
+          description: ID of the guild containing the channel
+
+    ChannelCreateEvent:
+      type: object
+      properties:
+        channel:
+          $ref: '#/components/schemas/Channel'
+          description: The channel that was created
+
+    ChannelUpdateEvent:
+      type: object
+      properties:
+        channel:
+          $ref: '#/components/schemas/Channel'
+          description: The channel that was updated
+        oldChannel:
+          $ref: '#/components/schemas/Channel'
+          description: The channel before it was updated
+
+    ChannelDeleteEvent:
+      type: object
+      properties:
+        channel:
+          $ref: '#/components/schemas/Channel'
+          description: The channel that was deleted
+
+    GuildMemberJoinEvent:
+      type: object
+      properties:
+        member:
+          $ref: '#/components/schemas/GuildMember'
+          description: The member that joined
+        guild:
+          $ref: '#/components/schemas/Guild'
+          description: The guild that was joined
+
+    GuildMemberRemoveEvent:
+      type: object
+      properties:
+        member:
+          $ref: '#/components/schemas/GuildMember'
+          description: The member that was removed
+        guild:
+          $ref: '#/components/schemas/Guild'
+          description: The guild that was left
+
+    GuildMemberUpdateEvent:
+      type: object
+      properties:
+        member:
+          $ref: '#/components/schemas/GuildMember'
+          description: The member that was updated
+        oldMember:
+          $ref: '#/components/schemas/GuildMember'
+          description: The member before it was updated
+        guild:
+          $ref: '#/components/schemas/Guild'
+          description: The guild where the update occurred
+
+    RoleCreateEvent:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/Role'
+          description: The role that was created
+        guild:
+          $ref: '#/components/schemas/Guild'
+          description: The guild where the role was created
+
+    RoleUpdateEvent:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/Role'
+          description: The role that was updated
+        oldRole:
+          $ref: '#/components/schemas/Role'
+          description: The role before it was updated
+        guild:
+          $ref: '#/components/schemas/Guild'
+          description: The guild where the update occurred
+
+    RoleDeleteEvent:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/Role'
+          description: The role that was deleted
+        guild:
+          $ref: '#/components/schemas/Guild'
+          description: The guild where the role was deleted
+
+    EmojisUpdateEvent:
+      type: object
+      properties:
+        emojis:
+          type: array
+          items:
+            $ref: '#/components/schemas/Emoji'
+          description: The updated list of emojis
+        oldEmojis:
+          type: array
+          items:
+            $ref: '#/components/schemas/Emoji'
+          description: The previous list of emojis
+        guild:
+          $ref: '#/components/schemas/Guild'
+          description: The guild where the update occurred
+
+    VoiceStateUpdateEvent:
+      type: object
+      properties:
+        voiceState:
+          $ref: '#/components/schemas/VoiceState'
+          description: The updated voice state
+        oldVoiceState:
+          $ref: '#/components/schemas/VoiceState'
+          description: The previous voice state
+
+    InteractionCreateEvent:
+      type: object
+      properties:
+        interaction:
+          $ref: '#/components/schemas/Interaction'
+          description: The interaction that was created
+
+    # WebSocket event schemas
+    WebSocketEvent:
+      type: object
+      required:
+        - op
+        - d
+      properties:
+        op:
+          type: integer
+          description: Opcode for the payload
+        d:
+          type: object
+          description: Event data
+        s:
+          type: integer
+          description: Sequence number, used for resuming sessions
+        t:
+          type: string
+          description: Event name
+
+    # Discord Gateway event op codes
+    GatewayOpCodes:
+      type: integer
+      enum:
+        - 0  # Dispatch
+        - 1  # Heartbeat
+        - 2  # Identify
+        - 3  # Presence Update
+        - 4  # Voice State Update
+        - 6  # Resume
+        - 7  # Reconnect
+        - 8  # Request Guild Members
+        - 9  # Invalid Session
+        - 10 # Hello
+        - 11 # Heartbeat ACK
+
+    # Discord Gateway intents
+    GatewayIntents:
+      type: integer
+      description: Gateway intents are bitwise values that can be ORed together to request events from Discord
+
+    # Discord Gateway event types
+    GatewayEventTypes:
+      type: string
+      enum:
+        - READY
+        - RESUMED
+        - RECONNECT
+        - INVALID_SESSION
+        - CHANNEL_CREATE
+        - CHANNEL_UPDATE
+        - CHANNEL_DELETE
+        - CHANNEL_PINS_UPDATE
+        - GUILD_CREATE
+        - GUILD_UPDATE
+        - GUILD_DELETE
+        - GUILD_BAN_ADD
+        - GUILD_BAN_REMOVE
+        - GUILD_EMOJIS_UPDATE
+        - GUILD_INTEGRATIONS_UPDATE
+        - GUILD_MEMBER_ADD
+        - GUILD_MEMBER_REMOVE
+        - GUILD_MEMBER_UPDATE
+        - GUILD_MEMBERS_CHUNK
+        - GUILD_ROLE_CREATE
+        - GUILD_ROLE_UPDATE
+        - GUILD_ROLE_DELETE
+        - GUILD_SCHEDULED_EVENT_CREATE
+        - GUILD_SCHEDULED_EVENT_UPDATE
+        - GUILD_SCHEDULED_EVENT_DELETE
+        - GUILD_SCHEDULED_EVENT_USER_ADD
+        - GUILD_SCHEDULED_EVENT_USER_REMOVE
+        - INVITE_CREATE
+        - INVITE_DELETE
+        - MESSAGE_CREATE
+        - MESSAGE_UPDATE
+        - MESSAGE_DELETE
+        - MESSAGE_DELETE_BULK
+        - MESSAGE_REACTION_ADD
+        - MESSAGE_REACTION_REMOVE
+        - MESSAGE_REACTION_REMOVE_ALL
+        - MESSAGE_REACTION_REMOVE_EMOJI
+        - PRESENCE_UPDATE
+        - TYPING_START
+        - USER_UPDATE
+        - VOICE_STATE_UPDATE
+        - VOICE_SERVER_UPDATE
+        - WEBHOOKS_UPDATE
+        - INTERACTION_CREATE
+        - THREAD_CREATE
+        - THREAD_UPDATE
+        - THREAD_DELETE
+        - THREAD_LIST_SYNC
+        - THREAD_MEMBER_UPDATE
+        - THREAD_MEMBERS_UPDATE
+        - STAGE_INSTANCE_CREATE
+        - STAGE_INSTANCE_UPDATE
+        - STAGE_INSTANCE_DELETE
+
+    # Additional schemas for various Discord features
+
+    # Application Command schemas
+    ApplicationCommand:
+      type: object
+      required:
+        - id
+        - type
+        - application_id
+        - name
+        - description
+        - version
+      properties:
+        id:
+          type: string
+          description: Unique ID of the command
+        type:
+          type: integer
+          description: Type of command
+        application_id:
+          type: string
+          description: ID of the parent application
+        guild_id:
+          type: string
+          description: Guild ID of the command, if not global
+        name:
+          type: string
+          description: Name of the command
+        description:
+          type: string
+          description: Description of the command
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApplicationCommandOption'
+          description: Parameters for the command
+        default_permission:
+          type: boolean
+          description: Whether the command is enabled by default when the app is added to a guild
+        version:
+          type: string
+          description: Autoincrementing version identifier
+
+    ApplicationCommandOption:
+      type: object
+      required:
+        - type
+        - name
+        - description
+      properties:
+        type:
+          type: integer
+          description: Type of option
+        name:
+          type: string
+          description: Name of the option
+        description:
+          type: string
+          description: Description of the option
+        required:
+          type: boolean
+          description: If the parameter is required or optional
+        choices:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApplicationCommandOptionChoice'
+          description: Choices for string, integer, and number type options
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApplicationCommandOption'
+          description: Sub options for subcommands and subcommand groups
+        channel_types:
+          type: array
+          items:
+            type: integer
+          description: If the option is a channel type, the channels shown will be restricted to these types
+        min_value:
+          type: number
+          description: For integer and number options, minimum value
+        max_value:
+          type: number
+          description: For integer and number options, maximum value
+        autocomplete:
+          type: boolean
+          description: Enable autocomplete interactions for this option
+
+    ApplicationCommandOptionChoice:
+      type: object
+      required:
+        - name
+        - value
+      properties:
+        name:
+          type: string
+          description: User-facing name of the option
+        value:
+          description: Value of the option
+
+    # Scheduled Event schemas
+    ScheduledEvent:
+      type: object
+      required:
+        - id
+        - guild_id
+        - name
+        - scheduled_start_time
+      properties:
+        id:
+          type: string
+          description: The ID of the scheduled event
+        guild_id:
+          type: string
+          description: The guild ID which the scheduled event belongs to
+        channel_id:
+          type: string
+          description: The channel ID in which the scheduled event will be hosted, or null if scheduled entity type is EXTERNAL
+        creator_id:
+          type: string
+          description: The ID of the user that created the scheduled event
+        name:
+          type: string
+          description: The name of the scheduled event
+        description:
+          type: string
+          description: The description of the scheduled event
+        scheduled_start_time:
+          type: string
+          format: date-time
+          description: The time the scheduled event will start
+        scheduled_end_time:
+          type: string
+          format: date-time
+          description: The time the scheduled event will end, required if entity_type is EXTERNAL
+        privacy_level:
+          type: integer
+          description: The privacy level of the scheduled event
+        status:
+          type: integer
+          description: The status of the scheduled event
+        entity_type:
+          type: integer
+          description: The type of the scheduled event
+        entity_id:
+          type: string
+          description: The ID of an entity associated with a guild scheduled event
+        entity_metadata:
+          $ref: '#/components/schemas/ScheduledEventEntityMetadata'
+          description: Additional metadata for the scheduled event
+        creator:
+          $ref: '#/components/schemas/User'
+          description: The user that created the scheduled event
+        user_count:
+          type: integer
+          description: The number of users subscribed to the scheduled event
+
+    ScheduledEventEntityMetadata:
+      type: object
+      properties:
+        location:
+          type: string
+          description: Location of the event (if entity_type is EXTERNAL)
+
+    # Stage Instance schemas
+    StageInstance:
+      type: object
+      required:
+        - id
+        - guild_id
+        - channel_id
+        - topic
+      properties:
+        id:
+          type: string
+          description: The ID of this Stage instance
+        guild_id:
+          type: string
+          description: The guild ID of the associated Stage channel
+        channel_id:
+          type: string
+          description: The ID of the associated Stage channel
+        topic:
+          type: string
+          description: The topic of the Stage instance
+        privacy_level:
+          type: integer
+          description: The privacy level of the Stage instance
+        discoverable_disabled:
+          type: boolean
+          description: Whether or not Stage discovery is disabled
+
+    # Thread schemas (additional to Channel)
+    ThreadMetadata:
+      type: object
+      properties:
+        archived:
+          type: boolean
+          description: Whether the thread is archived
+        auto_archive_duration:
+          type: integer
+          description: Duration in minutes to automatically archive the thread after recent activity
+        archive_timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the thread's archive status was last changed
+        locked:
+          type: boolean
+          description: Whether the thread is locked
+        invitable:
+          type: boolean
+          description: Whether non-moderators can add other non-moderators to a thread
+        create_timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the thread was created
+
+    # Custom events for JDA-specific features
+
+    ReadyEvent:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+          description: The authenticated bot user
+        guilds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Guild'
+          description: The guilds the bot is in
+        sessionId:
+          type: string
+          description: The session ID
+        applicationId:
+          type: string
+          description: The application ID
+        shard:
+          type: array
+          items:
+            type: integer
+          description: Shard info [shard_id, num_shards]
+
+    ShutdownEvent:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: Shutdown code
+        timeShutdown:
+          type: string
+          format: date-time
+          description: Time of shutdown
+        isClosing:
+          type: boolean
+          description: Whether the shutdown is a closing shutdown
