@@ -17,10 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -50,21 +47,50 @@ public class UserController {
      * Gets users that the bot can see.
      * Note: This only returns users in the bot's cache due to Discord API limitations.
      *
-     * @param guildId Optional guild ID to filter by
+     * @param guildId  Optional guild ID to filter by
      * @param dmFilter Optional parameter to filter for DM users
+     * @param allUsers Optional parameter
      * @return List of users
      */
     @GetMapping
     public ResponseEntity<?> getUsers(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String guildId,
-            @RequestParam(name = "dm", required = false, defaultValue = "false") boolean dmFilter) {
+            @RequestParam(name = "dm", required = false, defaultValue = "false") boolean dmFilter,
+            @RequestParam(name = "all", required = false, defaultValue = "false") boolean allUsers) {
         try {
             JDA jda = bot.getJda();
             List<User> users = new ArrayList<>();
 
-            // If guild ID is provided, get members from that guild
-            if (guildId != null && !guildId.isEmpty()) {
+            if (allUsers) {
+                // If 'all' parameter is true, get all unique users from all guilds
+                Set<String> processedUserIds = new HashSet<>();
+
+                for (Guild guild : jda.getGuilds()) {
+                    List<Member> members;
+                    if (guild.isLoaded()) {
+                        members = guild.getMembers();
+                    } else {
+                        // Load members if needed
+                        try {
+                            members = guild.loadMembers().get();
+                        } catch (Exception e) {
+                            logger.warn("Could not load members for guild {}: {}", guild.getId(), e.getMessage());
+                            members = new ArrayList<>();
+                        }
+                    }
+
+                    for (Member member : members) {
+                        User user = member.getUser();
+                        if (!processedUserIds.contains(user.getId())) {
+                            users.add(user);
+                            processedUserIds.add(user.getId());
+                        }
+                    }
+                }
+
+                logger.info("Fetched {} unique users from all guilds", users.size());
+            } else if (guildId != null && !guildId.isEmpty()) {
                 Guild guild = jda.getGuildById(guildId);
                 if (guild == null) {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -197,6 +223,7 @@ public class UserController {
             userData.put("discriminator", user.getDiscriminator());
             userData.put("avatarUrl", user.getEffectiveAvatarUrl());
             userData.put("isBot", user.isBot());
+            userData.put("bot", user.isBot());
             userData.put("globalName", user.getGlobalName());
 
             // Check if this is the owner

@@ -173,6 +173,13 @@ function selectServer(serverId) {
         guildNameElement.textContent = server.name;
     }
 
+    // Clear current user list while loading
+    window.currentState.users = [];
+    window.ui.renderUsers();
+
+    // Show loading indicator for users
+    usersList.innerHTML = '<div class="loading-indicator"><div class="spinner"></div><div>Loading members...</div></div>';
+
     // Fetch channels and members
     window.api.fetchGuildChannels(serverId)
         .then(() => {
@@ -186,10 +193,17 @@ function selectServer(serverId) {
             }
         });
 
-    window.api.fetchGuildMembers(serverId);
-
-    // Show user list
-    usersList.style.display = 'block';
+    // Fetch members with a clear loading state
+    window.api.fetchGuildMembers(serverId)
+        .then(members => {
+            console.log(`Loaded ${members.length} members for server ${serverId}`);
+            // Show user list
+            usersList.style.display = 'block';
+        })
+        .catch(error => {
+            usersList.innerHTML = '<div class="error-message">Failed to load members. Please try again.</div>';
+            console.error('Error loading members:', error);
+        });
 
     // Subscribe to guild events
     if (window.currentState.webSocket && window.currentState.webSocket.readyState === WebSocket.OPEN) {
@@ -356,10 +370,20 @@ window.ui.renderDmList = function() {
     window.currentState.dmUsers.forEach(user => {
         const dmEl = document.createElement('div');
         dmEl.className = `dm-item${window.currentState.selectedDmUserId === user.id ? ' active' : ''}`;
+
+        // Add special classes
         if (user.isOwner) {
             dmEl.classList.add('owner');
             console.log("Rendering owner:", user);
         }
+
+        // Bot detection - JDA sends this as 'bot' not 'isBot'
+        /*const isBot = user.bot === true || user.isBot === true;*/
+        const isBot = user['isBot'] === true;
+        if (isBot) {
+            dmEl.classList.add('bot');
+        }
+
         dmEl.dataset.id = user.id;
 
         let avatar = '';
@@ -379,15 +403,25 @@ window.ui.renderDmList = function() {
         // Use displayName if available, fall back to globalName, then username
         const displayName = user.displayName || user.globalName || user.username;
 
-        // Use both FontAwesome and a text fallback for the crown
-        const ownerBadge = user.isOwner ? ' <span class="owner-badge"><i class="fas fa-crown"></i></span>' : '';
+        // Add badges
+        let badges = '';
+
+        // Owner badge (crown icon)
+        if (user.isOwner) {
+            badges += ' <span class="owner-badge"><i class="fas fa-crown"></i></span>';
+        }
+
+        // Bot badge (robot icon)
+        if (isBot) {
+            badges += ' <span class="bot-badge"><i class="fas fa-robot"></i></span>';
+        }
 
         dmEl.innerHTML = `
             <div class="dm-avatar">
                 ${avatar}
                 <div class="dm-status ${statusClass}"></div>
             </div>
-            <span class="dm-name">${displayName}${ownerBadge}</span>
+            <span class="dm-name">${displayName}${badges}</span>
         `;
 
         dmEl.addEventListener('click', () => {
@@ -429,6 +463,30 @@ window.ui.updateBotInfo = function() {
 };
 
 function selectDmUser(userId) {
+    const user = window.currentState.dmUsers.find(u => u.id === userId);
+
+    // Check if user is a bot
+    if (user && user['isBot'] === true) {
+        // Show toast message
+        showToast('You cannot message bots directly', 'error');
+
+        // Highlight the selected user in the DM list but don't open a conversation
+        const prevSelectedDm = document.querySelector('.dm-item.active');
+        if (prevSelectedDm) {
+            prevSelectedDm.classList.remove('active');
+        }
+
+        const dmEl = document.querySelector(`.dm-item[data-id="${userId}"]`);
+        if (dmEl) {
+            dmEl.classList.add('active');
+        }
+
+        // Update state partially - set selectedDmUserId but don't change view
+        window.currentState.selectedDmUserId = userId;
+
+        return; // Exit early to prevent switching to message view
+    }
+
     // Deactivate previous selection
     const prevSelectedDm = document.querySelector('.dm-item.active');
     if (prevSelectedDm) {
@@ -447,7 +505,6 @@ function selectDmUser(userId) {
     window.currentState.selectedChannelId = null;
 
     // Update UI
-    const user = window.currentState.dmUsers.find(u => u.id === userId);
     if (user) {
         let avatar = '';
         if (user.avatarUrl) {
@@ -1471,7 +1528,7 @@ window.ui.switchToDmView = function() {
         messageInput.placeholder = 'Select a conversation...';
     }
 
-    // Fetch DMs with a callback to update UI when complete
+    // Always fetch all users when switching to DM view
     window.api.fetchDMs().then(() => {
         // Remove loading indicator
         const indicator = document.querySelector('.loading-indicator');
@@ -1558,6 +1615,10 @@ window.ui.handleWebSocketEvent = function(event) {
 
         case 'ACK':
             console.log(`Action acknowledged: ${data.action} for ID: ${data.id}`);
+            break;
+
+        case 'REFRESH_DM_LIST':
+            window.api.fetchDMs();
             break;
 
         case 'PONG':
@@ -1661,10 +1722,11 @@ window.ui.handleStatusUpdate = function(data) {
     // Find the user in the DM list
     const userId = data.userId;
     const newStatus = data.newStatus.toLowerCase();
+    const isOwner = data.isOwner === true;
 
-    console.log(`Status update for user ${data.userName} (${userId}): ${data.oldStatus} -> ${newStatus}`);
+    console.log(`Status update for user ${data.userName} (${userId}): ${data.oldStatus} -> ${newStatus} ${isOwner ? "[OWNER]" : ""}`);
 
-    // Update user in DM list
+    // Update user in DM list with priority for owner
     if (window.currentState.dmUsers) {
         const userIndex = window.currentState.dmUsers.findIndex(user => user.id === userId);
         if (userIndex !== -1) {
@@ -1673,6 +1735,10 @@ window.ui.handleStatusUpdate = function(data) {
             if (window.currentState.isDmView) {
                 window.ui.renderDmList();
             }
+        } else if (isOwner) {
+            // If owner not in list but this is owner update, fetch DMs to refresh
+            console.log("Owner status update detected but owner not in list - refreshing DM list");
+            window.api.fetchDMs();
         }
     }
 

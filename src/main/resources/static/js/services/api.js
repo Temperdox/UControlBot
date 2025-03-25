@@ -114,9 +114,15 @@ window.api = {
 
     fetchGuildMembers: async (guildId) => {
         try {
+            console.log(`Fetching members for guild: ${guildId}`);
             const data = await apiRequest(`guilds/${guildId}/members`);
+
+            // Store the fetched users with guild context
             window.currentState.users = data;
+
+            // Update user list UI
             window.ui.renderUsers();
+            console.log(`Loaded ${data.length} members for guild ${guildId}`);
             return data;
         } catch (error) {
             console.error('Error fetching members:', error);
@@ -127,48 +133,44 @@ window.api = {
     fetchDMs: async () => {
         try {
             console.log("Fetching DM users...");
-            const dmUsers = await apiRequest('users?dm=true');
-            console.log("DM users received:", dmUsers);
 
-            // Set initial state
-            window.currentState.dmUsers = Array.isArray(dmUsers) ? dmUsers : [];
+            // Fetch all users from all guilds instead of just DM users
+            const allUsers = await apiRequest('users?all=true');
+            console.log("All users received:", allUsers);
 
-            // Fetch bot owner separately
+            // Set initial state with received users
+            window.currentState.dmUsers = Array.isArray(allUsers) ? allUsers : [];
+
+            // Fetch bot owner separately to ensure they're always included
             try {
                 const owner = await apiRequest('bot/info/owner');
                 console.log("Owner info received:", owner);
 
                 if (owner && owner.id) {
-                    // Set status for the owner
-                    owner.status = "online";
-
                     // Check if owner already exists in the list
                     const existingOwnerIndex = window.currentState.dmUsers.findIndex(user => user.id === owner.id);
 
                     if (existingOwnerIndex !== -1) {
                         // Update existing user with owner flag
                         window.currentState.dmUsers[existingOwnerIndex].isOwner = true;
-                        window.currentState.dmUsers[existingOwnerIndex].status = "online";
+                        // Keep existing status if available
+                        if (!window.currentState.dmUsers[existingOwnerIndex].status) {
+                            window.currentState.dmUsers[existingOwnerIndex].status = owner.status || "offline";
+                        }
                     } else {
-                        // Add owner to the list
+                        // Add owner to the list with their provided status
                         owner.isOwner = true;
+                        if (!owner.status) {
+                            owner.status = "offline";
+                        }
                         window.currentState.dmUsers.unshift(owner);
                     }
                 }
 
-                // Set statuses for known users based on ID
+                // Ensure all users have a status property (default to offline if not provided)
                 for (const user of window.currentState.dmUsers) {
-                    // Fill in missing statuses based on known user IDs
-                    if (user.id === "568631703053139974") { // Your ID (Cotton Le Sergal)
-                        user.status = "online";
-                    } else if (user.id === "1040120006534516806") { // Deathly Eccs' ID
-                        user.status = "dnd";
-                    } else if (user.username === "Manifold" ||
-                        (user.displayName && user.displayName === "Manifold")) {
-                        user.status = "online";
-                    } else {
-                        // Default status if not specified
-                        user.status = user.status || "offline";
+                    if (!user.status) {
+                        user.status = "offline";
                     }
                 }
 
@@ -176,7 +178,7 @@ window.api = {
                 console.error("Failed to fetch owner:", ownerError);
             }
 
-            console.log("Final DM users with set statuses:", window.currentState.dmUsers);
+            console.log("Final DM users with statuses:", window.currentState.dmUsers);
             window.ui.renderDmList();
             return window.currentState.dmUsers;
         } catch (error) {
@@ -371,6 +373,17 @@ window.inspectChannels = () => {
     } else {
         console.log("No channels available to test");
     }
+};
+
+window.testStatusUpdate = function(userId, newStatus) {
+    console.log(`Testing status update for user ${userId} to ${newStatus}`);
+    const testData = {
+        userId: userId,
+        userName: "Test User",
+        oldStatus: "unknown",
+        newStatus: newStatus
+    };
+    window.ui.handleStatusUpdate(testData);
 };
 
 // Create the window.ui namespace (moved from main.js)

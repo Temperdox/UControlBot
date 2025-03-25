@@ -458,6 +458,10 @@ a:hover {
     background-color: #f04747; /* Discord DND red */
 }
 
+.dm-status.do_not_disturb {
+    background-color: #f04747; /* Discord DND red */
+}
+
 .dm-status.streaming {
     background-color: #643da7; /* Discord streaming purple */
 }
@@ -1065,7 +1069,7 @@ a:hover {
 .toast {
     position: fixed;
     bottom: 24px;
-    right: 24px;
+    right: 2px;
     background-color: var(--background-floating);
     border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.24);

@@ -9,6 +9,9 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Main entry point for the Discord bot application.
  * Uses JDA client from JdaProvider and manages the web server.
@@ -84,5 +87,24 @@ public class Bot implements CommandLineRunner {
     public void run(String... args) {
         // This method is called after the application is fully initialized
         logger.info("Bot and web server are fully operational");
+
+        triggerDmListRefresh();
+    }
+
+    /**
+     * Triggers a refresh of the DM list for all connected clients.
+     * Called during startup and when joining new guilds.
+     */
+    private void triggerDmListRefresh() {
+        Map<String, Object> data = new HashMap<>();
+        // You can optionally add metadata here
+        data.put("source", "bot_startup");
+        data.put("timestamp", System.currentTimeMillis());
+
+        // Broadcast the refresh event
+        if (webServer != null) {
+            webServer.broadcastEvent("REFRESH_DM_LIST", data);
+            logger.info("DM list refresh triggered on startup");
+        }
     }
 }

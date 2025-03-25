@@ -106,27 +106,33 @@ public class UserListener extends ListenerAdapter {
         User user = event.getUser();
         Member member = event.getMember();
 
-        // Skip if not in a guild or not a tracked guild
-        if (member == null) {
-            return;
+        String oldStatus = event.getOldOnlineStatus().name().toLowerCase();
+        String newStatus = event.getNewOnlineStatus().name().toLowerCase();
+
+        // Log status change
+        if (member != null) {
+            logger.info("User status updated: {} -> {} for user: {} (ID: {}) in guild: {} (ID: {})",
+                    oldStatus, newStatus, user.getName(), user.getId(),
+                    member.getGuild().getName(), member.getGuild().getId());
+        } else {
+            logger.info("User status updated: {} -> {} for user: {} (ID: {})",
+                    oldStatus, newStatus, user.getName(), user.getId());
         }
 
-        String oldStatus = event.getOldOnlineStatus().name();
-        String newStatus = event.getNewOnlineStatus().name();
-
-        logger.info("User status updated: {} -> {} for user: {} (ID: {}) in guild: {} (ID: {})",
-                oldStatus, newStatus, user.getName(), user.getId(),
-                member.getGuild().getName(), member.getGuild().getId());
-
-        // Broadcast user status update event
+        // Broadcast user status update event for all users, not just guild members
         Map<String, Object> data = new HashMap<>();
         data.put("userId", user.getId());
         data.put("userName", user.getName());
-        data.put("guildId", member.getGuild().getId());
-        data.put("guildName", member.getGuild().getName());
         data.put("oldStatus", oldStatus);
         data.put("newStatus", newStatus);
 
+        // Include guild info if available
+        if (member != null) {
+            data.put("guildId", member.getGuild().getId());
+            data.put("guildName", member.getGuild().getName());
+        }
+
+        // Broadcast to all clients
         broadcastEvent("USER_UPDATE_STATUS", data);
     }
 

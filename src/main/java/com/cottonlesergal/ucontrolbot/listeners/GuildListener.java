@@ -84,6 +84,8 @@ public class GuildListener extends ListenerAdapter {
 
         // Broadcast guild join event
         broadcastGuildEvent("GUILD_JOIN", guild);
+
+        broadcastEvent("REFRESH_DM_LIST", new HashMap<>());
     }
 
     @Override

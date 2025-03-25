@@ -18,7 +18,6 @@ import java.nio.file.Path;
  */
 @Configuration
 @PropertySource(value = "classpath:application.properties", ignoreResourceNotFound = true)
-@PropertySource(value = "file:config.properties", ignoreResourceNotFound = true)
 public class Config {
     private static final Logger logger = LoggerFactory.getLogger(Config.class);
 
