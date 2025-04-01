@@ -107,10 +107,68 @@
 </div>
 
 <!-- JavaScript Files -->
+<!-- JavaScript Files -->
+<!-- Fixed and clean index.html JavaScript setup -->
 <script type="text/javascript" src="/js/config.js"></script>
 <script type="text/javascript" src="/js/dto/DiscordDTO.js"></script>
 <script type="text/javascript" src="/js/dto/UserDTO.js"></script>
 <script type="text/javascript" src="/js/services/api.js"></script>
 <script type="text/javascript" src="/js/ui.js"></script>
+
+<!-- Database Service -->
+<script type="text/javascript" src="/js/services/database-service.js"></script>
+<script type="text/javascript" src="/js/services/database-service.js"></script>
+<script>
+    // Use proper try-catch for initialization
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            // Initialize as global variable only if script loaded
+            if (typeof DatabaseService === 'function') {
+                window.dbService = new DatabaseService();
+                console.log('Database service initialized');
+            } else {
+                console.warn('DatabaseService not loaded correctly');
+            }
+        } catch (e) {
+            console.error('Error initializing database service:', e);
+        }
+    });
+</script>
+
+<!-- Discord API Service -->
+<script type="text/javascript" src="/js/services/DiscordApiService.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', async function () {
+        console.log("🌐 Initializing Discord API Service");
+
+        // Instantiate and expose globally
+        window.api = new DiscordApiService();
+        await window.api.initialize();
+
+        // Add processEvent for debug use
+        window.processEvent = function (type, data) {
+            if (window.api && typeof window.api.processEvent === 'function') {
+                return window.api.processEvent(type, data);
+            }
+            console.warn("api.processEvent is not available yet");
+        };
+
+        // Force DB integration if desired
+        const script = document.createElement('script');
+        script.src = '/js/services/forced-db.js';
+        script.onload = () => console.log("✅ forced-db.js loaded");
+        document.body.appendChild(script);
+    });
+</script>
+
+<!-- Optional: Frontend DB helpers if needed -->
+<script type="module" src="/js/services/dbFrontendService.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log("Checking for DB services...");
+        console.log("dbService:", typeof window.dbService);
+        console.log("dbFrontendService:", typeof window.dbFrontendService);
+    });
+</script>
 </body>
 </html>

@@ -1,10 +1,13 @@
 package com.cottonlesergal.ucontrolbot.api;
 
+import com.cottonlesergal.ucontrolbot.config.Config;
+import com.cottonlesergal.ucontrolbot.db.DatabaseManager;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -17,6 +20,9 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Web server for the Discord bot API and web interface.
@@ -29,6 +35,12 @@ public class WebServer extends TextWebSocketHandler {
 
     private final Gson gson = new Gson();
 
+    @Autowired
+    private Config config;
+
+    @Autowired
+    private DatabaseManager dbManager;
+
     // WebSocket sessions
     private final ConcurrentMap<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
 
@@ -36,6 +48,9 @@ public class WebServer extends TextWebSocketHandler {
     private final ConcurrentMap<String, String> dmSubscriptions = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, String> channelSubscriptions = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, String> guildSubscriptions = new ConcurrentHashMap<>();
+
+    // Scheduled executor for background tasks
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     /**
      * Initializes the web server.
@@ -50,6 +65,9 @@ public class WebServer extends TextWebSocketHandler {
     @PostConstruct
     public void start() {
         logger.info("Web server started");
+
+        // Schedule periodic tasks
+        scheduler.scheduleAtFixedRate(this::cleanupTypingIndicators, 5, 5, TimeUnit.SECONDS);
     }
 
     /**
@@ -64,6 +82,10 @@ public class WebServer extends TextWebSocketHandler {
         dmSubscriptions.clear();
         channelSubscriptions.clear();
         guildSubscriptions.clear();
+
+        // Shutdown scheduler
+        scheduler.shutdown();
+
         logger.info("Web server stopped");
     }
 
@@ -90,6 +112,11 @@ public class WebServer extends TextWebSocketHandler {
      */
     public void broadcastEvent(String eventType, Object data) {
         String message = String.format("{\"type\":\"%s\",\"data\":%s}", eventType, gson.toJson(data));
+
+        // Save event to database first
+        dbManager.processEvent(eventType, data);
+
+        // Then broadcast to WebSocket clients
         sessions.values().forEach(session -> {
             try {
                 if (session.isOpen()) {
@@ -110,6 +137,9 @@ public class WebServer extends TextWebSocketHandler {
      */
     public void broadcastChannelEvent(String eventType, String channelId, Object data) {
         String message = String.format("{\"type\":\"%s\",\"data\":%s}", eventType, gson.toJson(data));
+
+        // Save event to database first
+        dbManager.processEvent(eventType, data);
 
         // Send to all sessions subscribed to this channel
         channelSubscriptions.entrySet().stream()
@@ -136,6 +166,9 @@ public class WebServer extends TextWebSocketHandler {
     public void broadcastDmEvent(String eventType, String userId, Object data) {
         String message = String.format("{\"type\":\"%s\",\"data\":%s}", eventType, gson.toJson(data));
 
+        // Save event to database first
+        dbManager.processEvent(eventType, data);
+
         // Send to all sessions subscribed to this user's DMs
         dmSubscriptions.entrySet().stream()
                 .filter(entry -> entry.getValue().equals(userId))
@@ -160,6 +193,9 @@ public class WebServer extends TextWebSocketHandler {
      */
     public void broadcastGuildEvent(String eventType, String guildId, Object data) {
         String message = String.format("{\"type\":\"%s\",\"data\":%s}", eventType, gson.toJson(data));
+
+        // Save event to database first
+        dbManager.processEvent(eventType, data);
 
         // Send to all sessions subscribed to this guild
         guildSubscriptions.entrySet().stream()
@@ -219,6 +255,9 @@ public class WebServer extends TextWebSocketHandler {
                     if (json.has("data") && json.getAsJsonObject("data").has("botId")) {
                         String botId = json.getAsJsonObject("data").get("botId").getAsString();
                         logger.info("Client {} identified as bot {}", sessionId, botId);
+
+                        // Set bot user ID in database manager
+                        dbManager.setBotUserId(botId);
 
                         // Acknowledge identity
                         sendAcknowledgement(session, "IDENTIFY", botId);
@@ -319,11 +358,23 @@ public class WebServer extends TextWebSocketHandler {
                             String channelId = data.get("channelId").getAsString();
                             logger.info("Client {} is typing in channel {}", sessionId, channelId);
 
+                            // Save to database
+                            if (data.has("userId") && !data.get("userId").isJsonNull()) {
+                                String userId = data.get("userId").getAsString();
+                                dbManager.saveTypingIndicator(userId, channelId);
+                            }
+
                             // Relay typing indicator to other clients subscribed to this channel
                             broadcastChannelEvent("TYPING_START", channelId, data);
                         } else if (data.has("userId") && !data.get("userId").isJsonNull()) {
                             String userId = data.get("userId").getAsString();
                             logger.info("Client {} is typing in DM with user {}", sessionId, userId);
+
+                            // Save to database - need to get DM channel ID
+                            String dmChannelId = dbManager.getDmChannelIdByUserId(userId);
+                            if (dmChannelId != null) {
+                                dbManager.saveTypingIndicator(userId, dmChannelId);
+                            }
 
                             // Relay typing indicator to other clients subscribed to this DM
                             broadcastDmEvent("TYPING_START", userId, data);
@@ -382,10 +433,7 @@ public class WebServer extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         String sessionId = session.getId();
-        sessions.remove(sessionId);
-        dmSubscriptions.remove(sessionId);
-        channelSubscriptions.remove(sessionId);
-        guildSubscriptions.remove(sessionId);
+        cleanupSession(sessionId);
         logger.info("WebSocket disconnected: {} with status {}", sessionId, status);
     }
 
@@ -398,10 +446,31 @@ public class WebServer extends TextWebSocketHandler {
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) {
         String sessionId = session.getId();
+        cleanupSession(sessionId);
+        logger.error("WebSocket error for session {}: {}", sessionId, exception.getMessage(), exception);
+    }
+
+    /**
+     * Cleans up all session-related data when a session ends.
+     *
+     * @param sessionId The WebSocket session ID to clean up
+     */
+    private void cleanupSession(String sessionId) {
         sessions.remove(sessionId);
         dmSubscriptions.remove(sessionId);
         channelSubscriptions.remove(sessionId);
         guildSubscriptions.remove(sessionId);
-        logger.error("WebSocket error for session {}: {}", sessionId, exception.getMessage(), exception);
+    }
+
+
+    /**
+     * Cleanup typing indicators that are older than 10 seconds
+     */
+    private void cleanupTypingIndicators() {
+        try {
+            dbManager.cleanupTypingIndicators();
+        } catch (Exception e) {
+            logger.error("Error cleaning up typing indicators", e);
+        }
     }
 }

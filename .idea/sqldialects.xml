@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SqlDialectMappings">
+    <file url="file://$PROJECT_DIR$/src/main/java/com/cottonlesergal/ucontrolbot/db/DatabaseApiController.java" dialect="MariaDB" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/cottonlesergal/ucontrolbot/db/DatabaseManager.java" dialect="MariaDB" />
+    <file url="file://$PROJECT_DIR$/src/main/resources/schema.sql" dialect="MariaDB" />
+    <file url="file://$PROJECT_DIR$/src/main/resources/static/js/services/DiscordApiService.js" dialect="MariaDB" />
+    <file url="file://$PROJECT_DIR$/src/main/resources/static/js/services/database-service.js" dialect="MariaDB" />
+  </component>
+</project>

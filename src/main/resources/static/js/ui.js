@@ -1,5 +1,16 @@
 // Initialize app with loading screen
 window.app = window.app || {};
+
+window.ui.useDatabase = function() {
+    // Only apply database integration if it's available
+    if (window.dbFrontendService && typeof window.dbFrontendService.patchWindowApi === 'function') {
+        console.log("Applying database integration to UI...");
+        window.dbFrontendService.patchWindowApi();
+        return true;
+    }
+    return false;
+};
+
 window.app.init = async function() {
     // Show loading screen
     const loadingScreen = window.ui.showLoadingScreen();
@@ -36,6 +47,7 @@ window.app.init = async function() {
         console.error("Error during app initialization:", error);
         window.ui.showLoadingError(loadingScreen, error);
     }
+    window.ui.useDatabase();
 };
 
 // Start the application when DOM is loaded
@@ -344,10 +356,11 @@ window.ui.renderUsers = function() {
                 avatar = `<div class="avatar-text">${avatarText}</div>`;
             }
 
+
             userEl.innerHTML = `
                 <div class="user-avatar">
                     ${avatar}
-                    <div class="user-status ${status}"></div>
+                    <div class="user-status ${user.status.toLowerCase() || 'offline'}"></div>
                 </div>
                 <span class="user-name">${user.displayName || user.username}</span>
             `;
@@ -1248,21 +1261,25 @@ window.ui.init = function() {
     statusIndicator = document.querySelector('.status-indicator');
 
     // Add event listeners
+    // In ui.js
+    // In ui.js - update your message form submission handler
     messageForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const content = messageInput.value.trim();
         if (!content) return;
 
-        // Optimistic UI update - show message immediately
+        // Create optimistic UI update
+        const optimisticId = 'temp-' + Date.now();
         const optimisticMessage = {
-            id: 'temp-' + Date.now(),
+            id: optimisticId,
             content: content,
             author: window.currentState.botUser,
             timestamp: Date.now(),
             pending: true
         };
 
+        // Add to state temporarily
         window.currentState.messages.push(optimisticMessage);
         window.ui.renderMessages();
 
@@ -1270,38 +1287,54 @@ window.ui.init = function() {
         messageInput.value = '';
 
         try {
+            console.log("Sending message:", content);
+
             if (window.currentState.isDmView && window.currentState.selectedDmUserId) {
-                // Send DM
-                const response = await fetch(`${window.API_BASE_URL}/users/${window.currentState.selectedDmUserId}/dm`, {
-                    method: 'POST',
+                console.log("Sending DM to user:", window.currentState.selectedDmUserId);
+
+                // Get DM channel first
+                const dmResponse = await fetch(`/api/users/${window.currentState.selectedDmUserId}/dm`, {
+                    method: 'POST'
                 });
 
-                if (response.ok) {
-                    const dmChannel = await response.json();
-                    await window.api.sendMessage(dmChannel.id, content);
+                if (!dmResponse.ok) {
+                    throw new Error('Failed to get DM channel');
                 }
-            } else if (!window.currentState.isDmView && window.currentState.selectedChannelId) {
-                // Send message to channel
-                await window.api.sendMessage(window.currentState.selectedChannelId, content);
-            }
 
-            // Remove optimistic message and fetch actual messages
-            window.currentState.messages = window.currentState.messages.filter(msg => msg.id !== optimisticMessage.id);
+                const dmChannel = await dmResponse.json();
+                console.log("Got DM channel:", dmChannel);
 
-            if (window.currentState.isDmView && window.currentState.selectedDmUserId) {
+                // Send to the DM channel
+                await window.api.sendMessage(dmChannel.id, content);
+                console.log("Message sent to DM channel:", dmChannel.id);
+
+                // Refresh messages
                 await window.api.fetchDmMessages(window.currentState.selectedDmUserId);
-            } else if (window.currentState.selectedChannelId) {
+            } else {
+                console.log("Sending message to channel:", window.currentState.selectedChannelId);
+
+                // Send to regular channel
+                await window.api.sendMessage(window.currentState.selectedChannelId, content);
+                console.log("Message sent to channel:", window.currentState.selectedChannelId);
+
+                // Refresh messages
                 await window.api.fetchMessages(window.currentState.selectedChannelId);
             }
+
+            // Remove optimistic message (will be replaced by actual message)
+            window.currentState.messages = window.currentState.messages.filter(msg => msg.id !== optimisticId);
         } catch (error) {
             console.error('Error sending message:', error);
 
-            // Show error state for optimistic message
-            const errorMsgIndex = window.currentState.messages.findIndex(msg => msg.id === optimisticMessage.id);
+            // Update optimistic message to show error
+            const errorMsgIndex = window.currentState.messages.findIndex(msg => msg.id === optimisticId);
             if (errorMsgIndex !== -1) {
                 window.currentState.messages[errorMsgIndex].error = true;
                 window.ui.renderMessages();
             }
+
+            // Show error toast
+            showToast('Failed to send message', 'error');
         }
     });
 
@@ -1719,39 +1752,46 @@ window.ui.handleNewMessage = function(messageData) {
 };
 
 window.ui.handleStatusUpdate = function(data) {
-    // Find the user in the DM list
     const userId = data.userId;
-    const newStatus = data.newStatus.toLowerCase();
+    const newStatus = data.newStatus?.toLowerCase?.() || "offline";
     const isOwner = data.isOwner === true;
 
     console.log(`Status update for user ${data.userName} (${userId}): ${data.oldStatus} -> ${newStatus} ${isOwner ? "[OWNER]" : ""}`);
 
-    // Update user in DM list with priority for owner
+    let updated = false;
+
     if (window.currentState.dmUsers) {
         const userIndex = window.currentState.dmUsers.findIndex(user => user.id === userId);
         if (userIndex !== -1) {
             window.currentState.dmUsers[userIndex].status = newStatus;
-            // Only re-render if we're in DM view
+            updated = true;
             if (window.currentState.isDmView) {
                 window.ui.renderDmList();
             }
         } else if (isOwner) {
-            // If owner not in list but this is owner update, fetch DMs to refresh
             console.log("Owner status update detected but owner not in list - refreshing DM list");
             window.api.fetchDMs();
         }
     }
 
-    // Update user in users list for server view
     if (window.currentState.users) {
         const userIndex = window.currentState.users.findIndex(user => user.id === userId);
         if (userIndex !== -1) {
             window.currentState.users[userIndex].status = newStatus;
-            // Only re-render if we're in server view and not DM view
+            updated = true;
             if (!window.currentState.isDmView) {
                 window.ui.renderUsers();
             }
         }
+    }
+
+    if (!updated && !window.currentState.isDmView && window.currentState.selectedServerId) {
+        console.log("⚠️ Status update for unloaded user - refreshing member list");
+        window.api.fetchGuildMembers(window.currentState.selectedServerId)
+            .then(() => {
+                console.log("🔄 Members refreshed after missed status update.");
+                window.ui.renderUsers();
+            });
     }
 };
 
@@ -1839,11 +1879,15 @@ window.ui.handleUserUpdate = function(data) {
 };
 
 window.ui.handlePresenceUpdate = function(data) {
-    // Update presence (online status) for a user
+    const userId = data.userId;
+    const newStatus = data.status?.toLowerCase?.() || "offline";
+    let updated = false;
+
     const updateUserPresence = (userArray) => {
-        const userIndex = userArray.findIndex(user => user.id === data.userId);
+        const userIndex = userArray.findIndex(user => user.id === userId);
         if (userIndex !== -1) {
-            userArray[userIndex].status = data.status;
+            userArray[userIndex].status = newStatus;
+            updated = true;
         }
     };
 
@@ -1855,13 +1899,22 @@ window.ui.handlePresenceUpdate = function(data) {
         updateUserPresence(window.currentState.dmUsers);
     }
 
-    // Re-render relevant UI components
-    if (window.currentState.isDmView) {
-        window.ui.renderDmList();
-    } else {
-        window.ui.renderUsers();
+    if (updated) {
+        if (window.currentState.isDmView) {
+            window.ui.renderDmList();
+        } else {
+            window.ui.renderUsers();
+        }
+    } else if (!window.currentState.isDmView && window.currentState.selectedServerId) {
+        console.log("⚠️ Presence update for unloaded user - refreshing member list");
+        window.api.fetchGuildMembers(window.currentState.selectedServerId)
+            .then(() => {
+                console.log("🔄 Members refreshed after missed presence update.");
+                window.ui.renderUsers();
+            });
     }
 };
+
 
 window.ui.handleTypingStart = function(data) {
     // Check if typing indicator is for the current channel/DM
